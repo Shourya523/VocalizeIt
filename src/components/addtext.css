@@ -1,0 +1,12 @@
+.Enter-Text-button {
+    font-family: 'Plus Jakarta Sans';
+    background: linear-gradient(45deg, rgba(160, 114, 255, .38), rgba(108, 57, 209, .38));
+    border: .5px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 15px rgba(160, 114, 255, 0.6), 0 0 30px rgba(160, 114, 255, 0.3);
+    border-radius: 50px;
+    margin: 2em;
+    height: 3em;
+    width: 12em;
+    color: rgb(218, 217, 217);
+    cursor: pointer;
+}
