@@ -13,13 +13,17 @@ function TextAreaPopUp({ popup }) {
 
   return (
     <div className="textarea-popup-window">
-      <textarea
-        placeholder="Your Text Here"
-        value={inputText}
-        onChange={handleChange}
-      />
-      <button className="submit-text" onClick={handleSubmit}></button>
+      <div className="textarea-wrapper">
+        <textarea
+          placeholder="Your Text Here"
+          value={inputText}
+          onChange={handleChange}
+        />
+        <button className="submit-text" onClick={handleSubmit}></button>
+      </div>
     </div>
+
+
   );
 }
 
