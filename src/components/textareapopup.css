@@ -46,8 +46,8 @@ textarea::-webkit-scrollbar-thumb
     background-size: cover;
     border-radius: 50%;
     z-index: 11;
-    bottom: 7.5em;
-    right: 25em;
+    bottom: 6.5em;
+    right: 27em;
     position: absolute;
     height: 3em;
     width: 3em;
