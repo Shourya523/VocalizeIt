@@ -34,7 +34,7 @@ function App() {
         <AddText popup={togglePopup} />
         <TextDisplay text={text} />
         <div className="made-with-love">
-          Made with Big <span className="red-heart">🍆</span> Energy <b>Shourya</b> & <b>Ansh</b>
+          Made with Big <span className="red-heart">🍆</span> Energy by <b>Shourya</b> & <b>Ansh</b>
         </div>
       </div>
     </>
