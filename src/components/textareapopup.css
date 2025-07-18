@@ -47,7 +47,7 @@ textarea::-webkit-scrollbar-thumb
     border-radius: 50%;
     z-index: 11;
     bottom: 7.5em;
-    right: 23.5em;
+    right: 25em;
     position: absolute;
     height: 3em;
     width: 3em;
