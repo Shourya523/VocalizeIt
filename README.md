@@ -1,12 +1,41 @@
-# React + Vite
+# 🎙️ VocalizeIt
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**VocalizeIt** is a sleek and simple web application that allows users to convert text into audio using Google Text-to-Speech (TTS). Whether you're looking to generate quick audio for notes, narration, or accessibility purposes, VocalizeIt delivers high-quality speech output with a minimal and modern interface.
 
-Currently, two official plugins are available:
+## 🚀 Live Site  
+🔗 https://shourya523.github.io/VocalizeIt/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## ✨ Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- 🎤 Convert any text to natural-sounding audio
+- 🧠 Powered by Google Cloud Text-to-Speech API
+- ⚡ Fast and responsive frontend built with React
+- 🖤 Clean, dark-themed UI with CSS styling
+- 🔄 Realtime conversion with simple UX
+- 🧩 Modular and scalable codebase
+
+---
+
+## 🛠️ Tech Stack
+
+**Frontend:**  
+- React.js  
+- HTML5 & CSS3  
+
+**Backend:**  
+- Node.js  
+- Express.js  
+
+**APIs:**  
+- Google Cloud Text-to-Speech API
+
+---
+
+## 📦 Getting Started (Local Development)
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/your-username/VocalizeIt.git
+cd VocalizeIt
