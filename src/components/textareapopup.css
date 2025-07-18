@@ -1,0 +1,54 @@
+.textarea-popup-window {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    backdrop-filter: blur(20px);
+    z-index: 10;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, .20);
+}
+
+textarea {
+    background-color: rgba(0, 0, 0, .39);
+    border: .5px solid rgba(255, 255, 255, .25);
+    box-shadow: -4px 4px 4px rgba(0, 0, 0, .25);
+    border-radius: 25px;
+    height: 35em;
+    width: 50em;
+    padding: 2em;
+    font-family: 'Plus Jakarta Sans';
+    color: rgb(218, 217, 217);
+    font-size: 1em;
+    resize: none;
+}
+textarea::-webkit-scrollbar
+{
+    background-color: transparent;
+    border-radius: 100px;
+    width: 1em;
+}
+textarea::-webkit-scrollbar-thumb
+{
+    background-color: rgba(0, 0, 0, .1);
+    border-radius: 100px;
+    cursor: pointer;
+}
+
+.submit-text {
+    background-color: rgba(0,0,0,.35);
+    /* box-shadow: 0 0 15px rgba(160, 114, 255, 0.6), 0 0 30px rgba(160, 114, 255, 0.3); */
+    border: .5px solid rgba(255, 255, 255, .25);
+    background-image: url('../assets/submit-text.svg');
+    background-size: cover;
+    border-radius: 50%;
+    z-index: 11;
+    bottom: 7.5em;
+    right: 23.5em;
+    position: absolute;
+    height: 3em;
+    width: 3em;
+}
