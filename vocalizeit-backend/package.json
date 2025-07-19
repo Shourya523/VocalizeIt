@@ -4,15 +4,15 @@
   "description": "backend for pdf website",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "node index.js"
   },
   "author": "Ansh",
   "license": "ISC",
   "dependencies": {
-    "@google-cloud/text-to-speech": "^6.2.0",
-    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
+    "elevenlabs": "^1.59.0",
     "express": "^5.1.0"
   }
 }

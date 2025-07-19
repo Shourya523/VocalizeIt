@@ -1,7 +1,15 @@
-<<<<<<< HEAD
-node_modules/
+# Dependencies
+node_modules
+
+# Vite build output
+dist
+.vite
+
+# Environment variables
 .env
-=======
+.env.local
+.env.*.local
+
 # Logs
 logs
 *.log
@@ -11,21 +19,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-.env
-.vite
-.DS_Store
-
-
-# Editor directories and files
+# IDE / Editor directories
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# OS-generated files
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
->>>>>>> c3c35581456fa1200a34fd7c24af56f3f47773ca
