@@ -13,7 +13,8 @@
     "install-all": "npm install && cd vocalizeit-backend && npm install"
   },
   "dependencies": {
-    "elevenlabs": "^1.59.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.45.0",
+    "node-fetch": "^3.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

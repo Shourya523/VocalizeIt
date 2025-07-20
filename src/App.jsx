@@ -1,33 +1,46 @@
-// App.jsx
+// App.jsx - Simplified version without voice settings
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './index.css';
 import Waveform from './components/Waveform';
 import AddText from './components/Addtext';
 
 function App() {
-  const [text, setText] = useState(''); // Manages the text from the textarea
+  const [text, setText] = useState('');
   const [audioSrc, setAudioSrc] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Use default voice settings (no UI controls)
+  const selectedVoice = 'en-US-AriaNeural';
+  const speechRate = '0%';
+  const speechPitch = '0%';
 
-  // This function triggers the API call with the current text
   const handleGenerateAudio = async () => {
-    if (!text.trim()) return; // Don't run if text is empty
+    if (!text.trim()) return;
 
     setIsLoading(true);
     setAudioSrc(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/tts/synthesize', {
+      const response = await fetch('https://vocalizeit-lc7l.onrender.com/api/tts/synthesize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text }),
+        body: JSON.stringify({ 
+          text: text,
+          voice: selectedVoice,
+          rate: speechRate,
+          pitch: speechPitch
+        }),
       });
 
-      if (!response.ok) throw new Error('Backend server error');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Backend server error');
+      }
 
       const data = await response.json();
 
+      // Convert base64 to blob URL
       const byteCharacters = atob(data.audioContent);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -40,7 +53,8 @@ function App() {
       setAudioSrc(url);
 
     } catch (error) {
-      console.error('Error fetching audio:', error);
+      console.error('Error generating audio:', error);
+      alert('Error: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -52,19 +66,20 @@ function App() {
         <div className="VocalizeIt-title">VocalizeIt</div>
         <div className="slogan">Create. Manage and Conquer Your Stories</div>
 
+        {/* Removed Voice Settings Section */}
+
         {isLoading ? <p>Generating Audio...</p> : <Waveform audioUrl={audioSrc} />}
         <AddText onGenerateClick={handleGenerateAudio} />
 
-        {/* Wrap the textarea in a div with your container class */}
         <div className="texdisplay-wrap">
           <textarea
-            // Apply your text box class here
             className="text-display-box"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Start your story here..."
           />
         </div>
+        
         <div className="made-with-love">
           Made with Big <span className="red-heart">🍆</span> Energy by <b>Shourya</b> & <b>Ansh</b>
         </div>

@@ -2,45 +2,44 @@ import { useState } from 'react';
 import Waveform from './Waveform'; // Import your Waveform component
 
 function StoryCreator() {
-  const [text, setText] = useState("");
-  const [audioUrl, setAudioUrl] = useState(null); // This will hold the playable URL
-  const [isLoading, setIsLoading] = useState(false);
+  const [text, setText] = useState(""); //
+  const [audioUrl, setAudioUrl] = useState(null); //
+  const [isLoading, setIsLoading] = useState(false); //
 
   const handleSynthesize = async () => {
-    setIsLoading(true);
-    setAudioUrl(null); // Reset previous audio
+    setIsLoading(true); //
+    setAudioUrl(null); //
 
     try {
-      const response = await fetch('/api/synthesize', { // Your backend route
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch('https://vocalizeit-lc7l.onrender.com/api/synthesize', { //
+        method: 'POST', //
+        headers: { //
+          'Content-Type': 'application/json', //
         },
-        body: JSON.stringify({ text: text }), // Send the text from the input
+        body: JSON.stringify({ text: text }), //
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate audio');
+      if (!response.ok) { //
+        throw new Error('Failed to generate audio'); //
       }
 
-      const data = await response.json(); // Gets { audioContent: '...' }
+      const data = await response.json(); //
 
-      // **This is the key part: Convert base64 to a playable URL**
-      const byteCharacters = atob(data.audioContent);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const byteCharacters = atob(data.audioContent); //
+      const byteNumbers = new Array(byteCharacters.length); //
+      for (let i = 0; i < byteCharacters.length; i++) { //
+        byteNumbers[i] = byteCharacters.charCodeAt(i); //
       }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
+      const byteArray = new Uint8Array(byteNumbers); //
+      const blob = new Blob([byteArray], { type: 'audio/mpeg' }); //
+      const url = URL.createObjectURL(blob); //
 
-      setAudioUrl(url); // Set the new URL in state
+      setAudioUrl(url); //
 
     } catch (error) {
-      console.error("Error synthesizing speech:", error);
+      console.error("Error synthesizing speech:", error); //
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); //
     }
   };
 
@@ -55,7 +54,6 @@ function StoryCreator() {
         {isLoading ? 'Generating...' : 'Create Audio'}
       </button>
 
-      {/* Conditionally render the Waveform component only when we have a URL */}
       {audioUrl && <Waveform audioUrl={audioUrl} />}
     </div>
   );
