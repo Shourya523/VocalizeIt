@@ -6,7 +6,16 @@
     border-radius: 50px;
     margin: 2em;
     height: 3em;
-    width: 12em;
+    width: 13em;
     color: rgb(218, 217, 217);
     cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+.Enter-Text-button:hover {
+    background: linear-gradient(45deg, rgba(160, 114, 255, .58), rgba(108, 57, 209, .58));
+    box-shadow: 0 0 20px rgba(160, 114, 255, 0.8), 0 0 40px rgba(160, 114, 255, 0.4);
+    height: 3.1em;
+    width: 13.5em; 
+    color: white;
+    transition: all 0.3s ease-in-out;
 }

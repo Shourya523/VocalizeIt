@@ -1,39 +1,124 @@
-.waveform-coverdiv
-{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0,0,0,.39);
-    height: 3em;
-    width: 30em;
-    border: .5px solid rgba(255,255,255,.25);
-    border-radius: 50px;
-    margin-top: .5em;
-    box-shadow: -4px 4px 4px rgba(0,0,0,.25);
-    backdrop-filter: blur(25px);
+/* The main container for your player */
+.waveform-coverdiv {
+  position: relative;
+  /* CRUCIAL: Makes this the anchor for absolute children */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.39);
+  height: 3em;
+  width: 30em;
+  border: 0.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50px;
+  margin-top: 0.5em;
+  box-shadow: -4px 4px 4px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(25px);
 }
-.play-button
-{
-    position: absolute;
-    background-image: url('../assets/play.svg');
-    filter: opacity(85%);
-    background-size: cover;
-    height: 2.5em;
-    width: 2.5em;
-    border-radius: 50%;
-    background-color: transparent;
-    border: 0px;
-    left: 1em;
-}
+
+/* --- Buttons & Icons --- */
+
+/* Base styles for both play/pause buttons to avoid repetition */
+.play-button,
 .pause-button {
   position: absolute;
-  background-image: url('../assets/pause.svg'); /* change this to your actual pause icon */
-  filter: opacity(75%);
   background-size: cover;
+  background-color: transparent;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  z-index: 2;
+  /* Ensure buttons are on top of the progress bar */
+  left: 0.75em;
+  top: .5em;
+  /* Adjusted slightly for better alignment */
+}
+
+.play-button {
+  background-image: url('../assets/play.svg');
+  filter: opacity(85%);
+  height: 2.5em;
+  width: 2.5em;
+}
+
+.pause-button {
+  background-image: url('../assets/pause.svg');
+  filter: opacity(75%);
   height: 2.65em;
   width: 2.65em;
+}
+
+.download-icon {
+  position: absolute;
+  background-image: url('../assets/download.svg');
+  background-size: cover;
+  height: 1.9em;
+  width: 1.9em;
+  right: 1.2em;
+  /* Adjusted for better alignment */
+  filter: opacity(75%);
+  z-index: 2;
+  /* Ensure icon is on top */
+  top: .5em;
+}
+
+/* --- NEW: Duration Bar & Time Styles --- */
+
+/* A container for the bar and time text */
+.duration-bar-container {
+  display: flex;
+  align-items: center;
+  width:30em;
+  /* Use padding to push the contents away from the absolute-positioned buttons */
+  padding: .0em 4.5em 0 4em;
+  box-sizing: border-box;
+  /* Ensures padding is calculated correctly with width: 100% */
+}
+
+.time-indicator {
+  font-family: 'Plus Jakarta Sans';
+  /* Looks good for numbers */
+  font-size: 0.85em;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 1em;
+  white-space: nowrap;
+  /* Prevents the time from wrapping to a new line */
+}
+
+/* Custom styling for the range input (the progress bar) */
+.duration-bar {
+  -webkit-appearance: none;
+  /* Removes default browser styles */
+  appearance: none;
+  width: 100%;
+  /* Take up available space in the container */
+  height: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  /* The background of the bar (the track) */
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Styles for the draggable handle (thumb) on Webkit browsers (Chrome, Safari) */
+.duration-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1em;
+  height: 1em;
+  background: rgba(255, 255, 255, 0.9);
+  /* The color of the handle */
   border-radius: 50%;
-  background-color: transparent;
-  border: 0px;
-  left: 1em;
+  cursor: pointer;
+  margin-top: -3.5px;
+  /* Helps vertically center the thumb on the track */
+}
+
+/* Styles for the draggable handle (thumb) on Firefox */
+.duration-bar::-moz-range-thumb {
+  width: 1em;
+  height: 1em;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
 }
