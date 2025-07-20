@@ -119,7 +119,7 @@ audio {
 @media (max-width: 700px) {
   .texdisplay-wrap {
     width: 85%;
-    height: 32.5em;
+    height: 30em;
   }
   .text-display-box {
     font-size: 0.9em;
