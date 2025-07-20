@@ -116,3 +116,39 @@ audio {
   background-color: rgba(0, 0, 0, 0.1);
   border-radius: 200px;
 }
+@media (max-width: 700px) {
+  .texdisplay-wrap {
+    width: 85%;
+    height: 32.5em;
+  }
+  .text-display-box {
+    font-size: 0.9em;
+  }
+  .text-placeholder {
+    font-size: 0.9em;
+  }
+  .VocalizeIt-title {
+    font-size: 2em;
+    margin-top: 2.5em;
+  }
+  .slogan {
+    font-size: 0.8em;
+  } 
+  .made-with-love {
+    font-size: 0.8em;
+  }
+  .VocalizeIt-mainbody
+  {
+    /* padding: 1em; */
+    height: 130vh;
+    width: 125vw;
+    overflow: hidden;
+  }
+  body
+  {
+    width: 125vw;
+    height: 130vh;
+    overflow: hidden;
+  }
+
+}

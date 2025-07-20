@@ -122,3 +122,25 @@
   border: none;
   cursor: pointer;
 }
+@media screen and (max-width: 700px) {
+  .waveform-coverdiv {
+    width: 85%;
+  }
+  .duration-bar-container {
+    width: 95vw;
+    padding: 0em 2em;
+  }
+  .play-button,
+  .pause-button {
+    left: 0.5em;
+    top: 0.6em;
+    height: 2.2em;
+    width: 2.2em;
+  }
+  .download-icon {
+    right: 1em;
+    height: 1.5em;
+    width: 1.5em;
+    top: .7em;
+  }
+}
