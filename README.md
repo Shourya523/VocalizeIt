@@ -5,6 +5,9 @@ VocalizeIt is a powerful and elegant text-to-speech web app that transforms your
 
 ---
 
+## 🚀 Live Site  
+🔗 https://vocalize-it-blush.vercel.app/
+
 ---
 
 ## 🚀 Features
