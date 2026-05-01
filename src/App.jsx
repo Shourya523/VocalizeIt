@@ -25,7 +25,7 @@ function App() {
 
   const fetchVoices = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/tts/voices');
+      const response = await fetch('https://vocalizeit-0w59.onrender.com/api/tts/voices');
       if (!response.ok) throw new Error('Failed to fetch voices');
       const data = await response.json();
       if (data.voices && data.voices.length > 0) {
@@ -49,7 +49,7 @@ function App() {
     setAudioSrc(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/tts/synthesize', {
+      const response = await fetch('https://vocalizeit-0w59.onrender.com/api/tts/synthesize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -99,7 +99,7 @@ function App() {
     formData.append('pdf', file);
 
     try {
-      const response = await fetch('http://localhost:3001/api/tts/extract-text', {
+      const response = await fetch('https://vocalizeit-0w59.onrender.com/api/tts/extract-text', {
         method: 'POST',
         body: formData,
       });
