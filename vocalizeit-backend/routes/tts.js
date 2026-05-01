@@ -1,128 +1,147 @@
 const express = require('express');
 const router = express.Router();
+const { ElevenLabsClient } = require("@elevenlabs/elevenlabs-js");
+const multer = require('multer');
+const pdfParseModule = require('pdf-parse');
+const PDFParse = pdfParseModule.PDFParse || pdfParseModule.default?.PDFParse || pdfParseModule;
+
+function base64EncodeUint8Array(uint8Array) {
+  const lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let output = '';
+  let i;
+  const len = uint8Array.length;
+  const extraBytes = len % 3;
+  const parts = [];
+
+  for (i = 0; i < len - extraBytes; i += 3) {
+    const chunk = (uint8Array[i] << 16) | (uint8Array[i + 1] << 8) | uint8Array[i + 2];
+    parts.push(
+      lookup[(chunk >> 18) & 0x3f] +
+      lookup[(chunk >> 12) & 0x3f] +
+      lookup[(chunk >> 6) & 0x3f] +
+      lookup[chunk & 0x3f]
+    );
+  }
+
+  if (extraBytes === 1) {
+    const chunk = uint8Array[len - 1];
+    parts.push(
+      lookup[(chunk >> 2) & 0x3f] +
+      lookup[(chunk << 4) & 0x3f] +
+      '=='
+    );
+  } else if (extraBytes === 2) {
+    const chunk = (uint8Array[len - 2] << 8) | uint8Array[len - 1];
+    parts.push(
+      lookup[(chunk >> 10) & 0x3f] +
+      lookup[(chunk >> 4) & 0x3f] +
+      lookup[(chunk << 2) & 0x3f] +
+      '='
+    );
+  }
+
+  return parts.join('');
+}
+
+// Configure multer for file uploads
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/synthesize', async (req, res) => {
-  const { text, voice = 'en-US-AriaNeural', rate = '0%', pitch = '0%' } = req.body;
+  const { 
+    text, 
+    voiceId = 'pNInz6obpgDQGcFmaJgB', 
+    stability = 0.5, 
+    similarity_boost = 0.5 
+  } = req.body;
 
   try {
     if (!text) {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    console.log('Synthesizing text with Azure:', text.substring(0, 50) + '...');
-    console.log('Using voice:', voice);
-    
-    const { apiKey, region } = req.azureConfig;
+    // Use credentials from middleware[cite: 1]
+    const { apiKey } = req.elevenLabsConfig;
+    const elevenlabs = new ElevenLabsClient({ apiKey });
 
-    // Create SSML (Speech Synthesis Markup Language)
-    const ssml = `
-      <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-        <voice name="${voice}">
-          <prosody rate="${rate}" pitch="${pitch}">
-            ${text}
-          </prosody>
-        </voice>
-      </speak>
-    `;
-
-    // Azure TTS REST API endpoint
-    const ttsUrl = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-
-    const response = await fetch(ttsUrl, {
-      method: 'POST',
-      headers: {
-        'Ocp-Apim-Subscription-Key': apiKey,
-        'Content-Type': 'application/ssml+xml',
-        'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3'
-      },
-      body: ssml
+    const audioStream = await elevenlabs.textToSpeech.convert(voiceId, {
+      text: text,
+      model_id: "eleven_multilingual_v2",
+      output_format: "mp3_44100_128",
+      voice_settings: {
+        stability,
+        similarity_boost,
+      }
     });
 
-    console.log('Azure API Response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Azure API Error:', response.status, errorText);
-      
-      if (response.status === 401) {
-        return res.status(401).json({ 
-          error: 'Authentication failed',
-          details: 'Azure Speech Services API key is invalid'
-        });
-      } else if (response.status === 403) {
-        return res.status(403).json({ 
-          error: 'Access denied',
-          details: 'Check your Azure subscription and resource permissions'
-        });
-      } else if (response.status === 429) {
-        return res.status(429).json({ 
-          error: 'Rate limit exceeded',
-          details: 'Too many requests. Please try again later.'
-        });
-      } else {
-        return res.status(response.status).json({ 
-          error: 'Azure TTS API error',
-          details: errorText
-        });
-      }
+    const chunks = [];
+    for await (const chunk of audioStream) {
+      chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
     }
 
-    const audioBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(audioBuffer);
-    
-    console.log('Successfully generated audio with Azure, buffer size:', buffer.length);
-    res.json({ 
-      audioContent: buffer.toString('base64'),
-      voice: voice,
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const audioBytes = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      audioBytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    const audioContent = base64EncodeUint8Array(audioBytes);
+
+    res.json({
+      audioContent,
+      voiceId: voiceId,
       contentType: 'audio/mpeg'
     });
 
   } catch (error) {
-    console.error('Azure synthesis error:', error);
-    res.status(500).json({ 
-      error: 'Failed to synthesize speech with Azure',
+    console.error('ElevenLabs synthesis error:', error);
+    res.status(500).json({
+      error: 'Failed to synthesize speech with ElevenLabs',
       details: error.message
     });
   }
 });
 
-// Get available voices
 router.get('/voices', async (req, res) => {
   try {
-    const { apiKey, region } = req.azureConfig;
-    const voicesUrl = `https://${region}.tts.speech.microsoft.com/cognitiveservices/voices/list`;
-    
-    const response = await fetch(voicesUrl, {
-      method: 'GET',
-      headers: {
-        'Ocp-Apim-Subscription-Key': apiKey
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch voices: ${response.status}`);
-    }
-
-    const voices = await response.json();
-    
-    // Filter for popular English voices
-    const popularVoices = voices.filter(voice => 
-      voice.Locale.startsWith('en-') && voice.VoiceType === 'Neural'
-    ).slice(0, 20);
+    const { apiKey } = req.elevenLabsConfig;
+    const elevenlabs = new ElevenLabsClient({ apiKey });
+    const data = await elevenlabs.voices.getAll();
 
     res.json({
-      voices: popularVoices.map(voice => ({
-        name: voice.Name,
-        displayName: voice.DisplayName,
-        locale: voice.Locale,
-        gender: voice.Gender,
-        voiceType: voice.VoiceType
+      voices: data.voices.map(voice => ({
+        id: voice.voice_id,
+        name: voice.name,
+        category: voice.category,
+        previewUrl: voice.preview_url,
+        labels: voice.labels
       }))
     });
 
   } catch (error) {
     console.error('Error fetching voices:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Route to extract text from PDF
+router.post('/extract-text', upload.single('pdf'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'PDF file is required' });
+    }
+
+    const pdfData = new Uint8Array(req.file.buffer);
+    const parser = new PDFParse(pdfData);
+    const data = await parser.getText();
+    const text = data?.text || '';
+
+    res.json({ text });
+
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error);
+    res.status(500).json({ error: 'Failed to extract text from PDF', details: error.message });
   }
 });
 

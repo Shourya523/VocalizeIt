@@ -3,20 +3,16 @@ const express = require('express');
 const cors = require('cors');
 const ttsRoutes = require('./routes/tts');
 
-// Validate Azure credentials
-const azureApiKey = process.env.AZURE_SPEECH_KEY;
-const azureRegion = process.env.AZURE_SPEECH_REGION;
+// Validate ElevenLabs credentials[cite: 1]
+const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY;
 
-if (!azureApiKey || !azureRegion) {
-  console.error("❌ Azure Speech credentials are missing:");
-  console.error("   AZURE_SPEECH_KEY:", azureApiKey ? "✅ Set" : "❌ Missing");
-  console.error("   AZURE_SPEECH_REGION:", azureRegion ? "✅ Set" : "❌ Missing");
+if (!elevenLabsApiKey) {
+  console.error("❌ ElevenLabs credentials are missing:");
+  console.error("   ELEVENLABS_API_KEY:", elevenLabsApiKey ? "✅ Set" : "❌ Missing");
   process.exit(1);
 }
 
-console.log("✅ Azure Speech credentials loaded successfully");
-console.log("Region:", azureRegion);
-console.log("API Key starts with:", azureApiKey.substring(0, 5));
+console.log("✅ ElevenLabs credentials loaded successfully");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -24,62 +20,47 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
-// Middleware to attach Azure credentials to each request
+// Middleware to attach ElevenLabs configuration to each request[cite: 1]
 app.use((req, res, next) => {
-  req.azureConfig = {
-    apiKey: azureApiKey,
-    region: azureRegion
+  req.elevenLabsConfig = {
+    apiKey: elevenLabsApiKey
   };
   next();
 });
 
-// Use the TTS routes
+// Use the TTS routes[cite: 1]
 app.use('/api/tts', ttsRoutes);
 
-// Debug endpoint
+// Debug endpoint[cite: 1]
 app.get('/debug-env', (req, res) => {
   res.json({
-    azureKeyExists: !!azureApiKey,
-    azureKeyLength: azureApiKey ? azureApiKey.length : 0,
-    azureRegion: azureRegion || 'not set',
-    firstFourChars: azureApiKey ? azureApiKey.substring(0, 4) : null,
+    elevenLabsKeyExists: !!elevenLabsApiKey,
+    elevenLabsKeyLength: elevenLabsApiKey ? elevenLabsApiKey.length : 0,
     nodeEnv: process.env.NODE_ENV || 'not set'
   });
 });
 
-// Test Azure connection
-app.get('/test-azure', async (req, res) => {
+// Test ElevenLabs connection[cite: 1]
+app.get('/test-elevenlabs', async (req, res) => {
   try {
-    console.log("Testing Azure Speech Services connection...");
-    
-    // Simple test using the REST API
-    const testUrl = `https://${azureRegion}.tts.speech.microsoft.com/cognitiveservices/voices/list`;
-    
-    const response = await fetch(testUrl, {
+    console.log("Testing ElevenLabs connection...");
+    const response = await fetch('https://api.elevenlabs.io/v1/voices', {
       method: 'GET',
-      headers: {
-        'Ocp-Apim-Subscription-Key': azureApiKey
-      }
+      headers: { 'xi-api-key': elevenLabsApiKey }
     });
 
     if (!response.ok) {
-      throw new Error(`Azure API test failed: ${response.status} ${response.statusText}`);
+      throw new Error(`ElevenLabs API test failed: ${response.status}`);
     }
 
-    const voices = await response.json();
-    
+    const data = await response.json();
     res.json({
       success: true,
-      message: "Azure Speech Services connection successful",
-      voiceCount: voices ? voices.length : 0,
-      sampleVoices: voices ? voices.slice(0, 3).map(v => ({
-        name: v.Name,
-        locale: v.Locale,
-        gender: v.Gender
-      })) : []
+      message: "ElevenLabs connection successful",
+      voiceCount: data.voices ? data.voices.length : 0
     });
   } catch (error) {
-    console.error("Azure test failed:", error);
+    console.error("ElevenLabs test failed:", error);
     res.status(500).json({
       success: false,
       error: error.message
