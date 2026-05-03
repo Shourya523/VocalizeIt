@@ -2,22 +2,40 @@ import { useState, useEffect } from 'react';
 import './index.css';
 import Waveform from './components/Waveform';
 
+const API_BASE_URL = 'http://localhost:3001'; // Change to https://vocalizeit-0w59.onrender.com for production
+
 function App() {
+  const [activeTab, setActiveTab] = useState('tts');
+
+  // TTS State
   const [text, setText] = useState('');
   const [audioSrc, setAudioSrc] = useState(null);
-  
-  // ElevenLabs Parameters
   const [voices, setVoices] = useState([]);
-  const [selectedVoiceId, setSelectedVoiceId] = useState('pNInz6obpgDQGcFmaJgB'); // Default ElevenLabs voice
+  const [selectedVoiceId, setSelectedVoiceId] = useState('pNInz6obpgDQGcFmaJgB');
   const [stability, setStability] = useState(0.5);
   const [similarityBoost, setSimilarityBoost] = useState(0.5);
-
-  // UI States
   const [isLoadingVoices, setIsLoadingVoices] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState({ message: '', type: '' });
   const [isDragging, setIsDragging] = useState(false);
+
+  // STT State
+  const [sttFile, setSttFile] = useState(null);
+  const [sttText, setSttText] = useState('');
+  const [isSttProcessing, setIsSttProcessing] = useState(false);
+
+  // Isolate State
+  const [isolateFile, setIsolateFile] = useState(null);
+  const [isolateAudioSrc, setIsolateAudioSrc] = useState(null);
+  const [isIsolateProcessing, setIsIsolateProcessing] = useState(false);
+
+  // Dubbing State
+  const [dubFile, setDubFile] = useState(null);
+  const [dubTargetLang, setDubTargetLang] = useState('es');
+  const [dubAudioSrc, setDubAudioSrc] = useState(null);
+  const [isDubProcessing, setIsDubProcessing] = useState(false);
+  const [dubStatus, setDubStatus] = useState('');
 
   useEffect(() => {
     fetchVoices();
@@ -25,12 +43,11 @@ function App() {
 
   const fetchVoices = async () => {
     try {
-      const response = await fetch('https://vocalizeit-0w59.onrender.com/api/tts/voices');
+      const response = await fetch(`${API_BASE_URL}/api/tts/voices`);
       if (!response.ok) throw new Error('Failed to fetch voices');
       const data = await response.json();
       if (data.voices && data.voices.length > 0) {
         setVoices(data.voices);
-        // If default isn't in list, set to first available
         if (!data.voices.find(v => v.id === selectedVoiceId)) {
           setSelectedVoiceId(data.voices[0].id);
         }
@@ -44,41 +61,28 @@ function App() {
 
   const handleGenerateAudio = async () => {
     if (!text.trim()) return;
-
     setIsGenerating(true);
     setAudioSrc(null);
-
     try {
-      const response = await fetch('https://vocalizeit-0w59.onrender.com/api/tts/synthesize', {
+      const response = await fetch(`${API_BASE_URL}/api/tts/synthesize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text: text,
-          voiceId: selectedVoiceId,
-          stability: stability,
-          similarity_boost: similarityBoost
+        body: JSON.stringify({
+          text, voiceId: selectedVoiceId, stability, similarity_boost: similarityBoost
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.details || 'Backend server error');
       }
-
       const data = await response.json();
-
-      // Convert base64 to blob URL
       const byteCharacters = atob(data.audioContent);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
         byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
-
-      setAudioSrc(url);
-
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'audio/mpeg' });
+      setAudioSrc(URL.createObjectURL(blob));
     } catch (error) {
       console.error('Error generating audio:', error);
       alert('Error: ' + error.message);
@@ -87,62 +91,119 @@ function App() {
     }
   };
 
-  const processFileUpload = async (file) => {
+  const processPDFUpload = async (file) => {
     if (!file || !(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'))) {
       setUploadStatus({ message: 'Please select a valid PDF file.', type: 'error' });
       return;
     }
-
     setIsUploading(true);
     setUploadStatus({ message: 'Extracting text...', type: 'loading' });
     const formData = new FormData();
     formData.append('pdf', file);
-
     try {
-      const response = await fetch('https://vocalizeit-0w59.onrender.com/api/tts/extract-text', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to extract text');
-      }
-
+      const response = await fetch(`${API_BASE_URL}/api/tts/extract-text`, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Failed to extract text');
       const data = await response.json();
       setText(data.text);
       setUploadStatus({ message: `Success! Extracted ${data.text.split(' ').length} words.`, type: 'success' });
-
     } catch (error) {
-      console.error('Error uploading PDF:', error);
       setUploadStatus({ message: 'Upload failed. ' + error.message, type: 'error' });
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) processFileUpload(file);
-    // Reset input so the same file can be uploaded again if needed
-    event.target.value = null; 
+  const handleSTTProcess = async () => {
+    if (!sttFile) return;
+    setIsSttProcessing(true);
+    setSttText('');
+    const formData = new FormData();
+    formData.append('audio', sttFile);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tts/speech-to-text`, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Failed to transcribe');
+      const data = await response.json();
+      setSttText(data.text);
+    } catch (error) {
+      alert('Error: ' + error.message);
+    } finally {
+      setIsSttProcessing(false);
+    }
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const handleIsolateProcess = async () => {
+    if (!isolateFile) return;
+    setIsIsolateProcessing(true);
+    setIsolateAudioSrc(null);
+    const formData = new FormData();
+    formData.append('audio', isolateFile);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tts/isolate`, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Failed to isolate voice');
+      const data = await response.json();
+      const byteCharacters = atob(data.audioContent);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'audio/mpeg' });
+      setIsolateAudioSrc(URL.createObjectURL(blob));
+    } catch (error) {
+      alert('Error: ' + error.message);
+    } finally {
+      setIsIsolateProcessing(false);
+    }
   };
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
+  const handleDubProcess = async () => {
+    if (!dubFile) return;
+    setIsDubProcessing(true);
+    setDubStatus('Initiating dubbing...');
+    setDubAudioSrc(null);
+    const formData = new FormData();
+    formData.append('file', dubFile);
+    formData.append('target_lang', dubTargetLang);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tts/dub`, { method: 'POST', body: formData });
+      if (!response.ok) throw new Error('Failed to initiate dubbing');
+      const data = await response.json();
+      const dubbingId = data.dubbing_id;
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) processFileUpload(file);
+      // Poll status
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`${API_BASE_URL}/api/tts/dub/${dubbingId}`);
+          const statusData = await statusRes.json();
+          setDubStatus(`Status: ${statusData.status}...`);
+          if (statusData.status === 'dubbed') {
+            clearInterval(pollInterval);
+            const byteCharacters = atob(statusData.audioContent);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'audio/mpeg' });
+            setDubAudioSrc(URL.createObjectURL(blob));
+            setDubStatus('Dubbing complete!');
+            setIsDubProcessing(false);
+          } else if (statusData.status === 'failed') {
+            clearInterval(pollInterval);
+            setDubStatus('Dubbing failed.');
+            setIsDubProcessing(false);
+          }
+        } catch (err) {
+          console.error('Polling error', err);
+        }
+      }, 5000); // poll every 5 seconds
+    } catch (error) {
+      if (error.message.includes('authorization_error') || error.message.includes('watermark')) {
+        alert('Error: ElevenLabs free tier requires dubbing VIDEO files with a watermark. Audio files cannot be dubbed on the free tier. Please upload a video file or upgrade your ElevenLabs account.');
+      } else {
+        alert('Error: ' + error.message);
+      }
+      setIsDubProcessing(false);
+      setDubStatus('');
+    }
   };
 
   return (
@@ -150,146 +211,138 @@ function App() {
       <header className="app-header">
         <h1 className="app-title">VocalizeIt</h1>
         <p className="app-slogan">Transform Text & Documents into Lifelike Speech</p>
+        <div className="tab-navigation">
+          <button className={`tab-btn ${activeTab === 'tts' ? 'active' : ''}`} onClick={() => setActiveTab('tts')}>Text to Speech</button>
+          <button className={`tab-btn ${activeTab === 'stt' ? 'active' : ''}`} onClick={() => setActiveTab('stt')}>Speech to Text</button>
+          <button className={`tab-btn ${activeTab === 'isolate' ? 'active' : ''}`} onClick={() => setActiveTab('isolate')}>Voice Isolation</button>
+          <button className={`tab-btn ${activeTab === 'dub' ? 'active' : ''}`} onClick={() => setActiveTab('dub')}>Dubbing</button>
+        </div>
       </header>
 
       <main className="main-content">
-        {/* Left Column: Input */}
-        <div className="glass-panel">
-          <h2 className="section-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            Content Input
-          </h2>
+        {activeTab === 'tts' && (
+          <>
+            <div className="glass-panel">
+              <h2 className="section-title">Content Input</h2>
+              <div
+                className={`pdf-upload-area ${isDragging ? 'dragging' : ''}`}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                onDrop={(e) => {
+                  e.preventDefault(); setIsDragging(false);
+                  if (e.dataTransfer.files[0]) processPDFUpload(e.dataTransfer.files[0]);
+                }}
+              >
+                <label className="pdf-upload-label" htmlFor="pdf-upload-input">
+                  <span className="pdf-upload-text">Upload PDF Document</span>
+                  <span className="pdf-upload-subtext">Drag & drop or click to browse</span>
+                </label>
+                <input id="pdf-upload-input" type="file" accept=".pdf" onChange={(e) => {
+                  if (e.target.files[0]) processPDFUpload(e.target.files[0]);
+                  e.target.value = null;
+                }} disabled={isUploading} />
+                {uploadStatus.message && <div className={`upload-status ${uploadStatus.type}`}>{uploadStatus.message}</div>}
+              </div>
 
-          <div 
-            className={`pdf-upload-area ${isDragging ? 'dragging' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <label className="pdf-upload-label" htmlFor="pdf-upload-input">
-              <svg className="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span className="pdf-upload-text">Upload PDF Document</span>
-              <span className="pdf-upload-subtext">Drag & drop or click to browse</span>
-            </label>
-            <input
-              id="pdf-upload-input"
-              type="file"
-              accept=".pdf"
-              onChange={handleFileUpload}
-              disabled={isUploading}
-            />
-            {uploadStatus.message && (
-              <div className={`upload-status ${uploadStatus.type}`}>
-                {uploadStatus.message}
+              <div className="text-input-container">
+                <textarea className="main-textarea" value={text} onChange={(e) => setText(e.target.value)} placeholder="Or start typing your script here..." />
+                <div className="text-meta">{text.trim().split(/\s+/).filter(w => w.length > 0).length} words</div>
+              </div>
+            </div>
+
+            <div className="glass-panel">
+              <h2 className="section-title">Voice Settings</h2>
+              <div className="settings-group">
+                <label className="settings-label">Selected Voice {isLoadingVoices && <div className="spinner"></div>}</label>
+                <select className="custom-select" value={selectedVoiceId} onChange={(e) => setSelectedVoiceId(e.target.value)} disabled={isLoadingVoices || voices.length === 0}>
+                  {voices.length > 0 ? voices.map(voice => <option key={voice.id} value={voice.id}>{voice.name}</option>) : <option value="pNInz6obpgDQGcFmaJgB">Default Voice</option>}
+                </select>
+              </div>
+
+              <div className="settings-group">
+                <label className="settings-label"><span>Stability</span><span className="settings-value">{Math.round(stability * 100)}%</span></label>
+                <input type="range" className="custom-range" min="0" max="1" step="0.01" value={stability} onChange={(e) => setStability(parseFloat(e.target.value))} />
+              </div>
+
+              <div className="settings-group">
+                <label className="settings-label"><span>Similarity Boost</span><span className="settings-value">{Math.round(similarityBoost * 100)}%</span></label>
+                <input type="range" className="custom-range" min="0" max="1" step="0.01" value={similarityBoost} onChange={(e) => setSimilarityBoost(parseFloat(e.target.value))} />
+              </div>
+
+              <div className="generate-btn-container">
+                <button className="generate-btn" onClick={handleGenerateAudio} disabled={isGenerating || !text.trim()}>
+                  {isGenerating ? 'Generating Magic...' : 'Generate Voiceover'}
+                </button>
+              </div>
+
+              <div className="player-section"><Waveform audioUrl={audioSrc} /></div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'stt' && (
+          <div className="glass-panel" style={{ gridColumn: '1 / -1' }}>
+            <h2 className="section-title">Speech to Text</h2>
+            <div className="file-upload-container">
+              <input type="file" accept="audio/*" onChange={(e) => setSttFile(e.target.files[0])} />
+            </div>
+            <button className="generate-btn" onClick={handleSTTProcess} disabled={!sttFile || isSttProcessing} style={{ marginTop: '20px' }}>
+              {isSttProcessing ? 'Transcribing...' : 'Transcribe Audio'}
+            </button>
+            {sttText && (
+              <div className="text-input-container" style={{ marginTop: '20px' }}>
+                <textarea className="main-textarea" value={sttText} readOnly />
               </div>
             )}
           </div>
+        )}
 
-          <div className="text-input-container">
-            <textarea
-              className="main-textarea"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Or start typing your script here..."
-            />
-            <div className="text-meta">
-              {text.trim().split(/\s+/).filter(w => w.length > 0).length} words
+        {activeTab === 'isolate' && (
+          <div className="glass-panel" style={{ gridColumn: '1 / -1' }}>
+            <h2 className="section-title">Voice Isolation</h2>
+            <div className="file-upload-container">
+              <input type="file" accept="audio/*" onChange={(e) => setIsolateFile(e.target.files[0])} />
             </div>
-          </div>
-        </div>
-
-        {/* Right Column: Settings & Generation */}
-        <div className="glass-panel">
-          <h2 className="section-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-            Voice Settings
-          </h2>
-
-          <div className="settings-group">
-            <label className="settings-label">
-              Selected Voice
-              {isLoadingVoices && <div className="spinner"></div>}
-            </label>
-            <select 
-              className="custom-select" 
-              value={selectedVoiceId} 
-              onChange={(e) => setSelectedVoiceId(e.target.value)}
-              disabled={isLoadingVoices || voices.length === 0}
-            >
-              {voices.length > 0 ? (
-                voices.map(voice => (
-                  <option key={voice.id} value={voice.id}>
-                    {voice.name} {voice.category ? `(${voice.category})` : ''}
-                  </option>
-                ))
-              ) : (
-                <option value="pNInz6obpgDQGcFmaJgB">Default Voice</option>
-              )}
-            </select>
-          </div>
-
-          <div className="settings-group">
-            <label className="settings-label">
-              <span>Stability</span>
-              <span className="settings-value">{Math.round(stability * 100)}%</span>
-            </label>
-            <input
-              type="range"
-              className="custom-range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={stability}
-              onChange={(e) => setStability(parseFloat(e.target.value))}
-            />
-          </div>
-
-          <div className="settings-group">
-            <label className="settings-label">
-              <span>Similarity Boost</span>
-              <span className="settings-value">{Math.round(similarityBoost * 100)}%</span>
-            </label>
-            <input
-              type="range"
-              className="custom-range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={similarityBoost}
-              onChange={(e) => setSimilarityBoost(parseFloat(e.target.value))}
-            />
-          </div>
-
-          <div className="generate-btn-container">
-            <button 
-              className="generate-btn" 
-              onClick={handleGenerateAudio}
-              disabled={isGenerating || !text.trim()}
-            >
-              {isGenerating ? (
-                <>
-                  <div className="spinner"></div>
-                  Generating Magic...
-                </>
-              ) : (
-                <>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                  Generate Voiceover
-                </>
-              )}
+            <button className="generate-btn" onClick={handleIsolateProcess} disabled={!isolateFile || isIsolateProcessing} style={{ marginTop: '20px' }}>
+              {isIsolateProcessing ? 'Isolating...' : 'Isolate Voice'}
             </button>
+            {isolateAudioSrc && (
+              <div className="player-section" style={{ marginTop: '20px' }}>
+                <Waveform audioUrl={isolateAudioSrc} />
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Player Section */}
-          <div className="player-section">
-            <Waveform audioUrl={audioSrc} />
+        {activeTab === 'dub' && (
+          <div className="glass-panel" style={{ gridColumn: '1 / -1' }}>
+            <h2 className="section-title">Dubbing</h2>
+            <div className="file-upload-container">
+              <input type="file" accept="audio/*,video/*" onChange={(e) => setDubFile(e.target.files[0])} />
+            </div>
+            <div className="settings-group" style={{ marginTop: '20px' }}>
+              <label className="settings-label">Target Language</label>
+              <select className="custom-select" value={dubTargetLang} onChange={(e) => setDubTargetLang(e.target.value)}>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="hi">Hindi</option>
+                <option value="ja">Japanese</option>
+              </select>
+            </div>
+            <button className="generate-btn" onClick={handleDubProcess} disabled={!dubFile || isDubProcessing} style={{ marginTop: '20px' }}>
+              {isDubProcessing ? 'Processing Dubbing...' : 'Dub Audio'}
+            </button>
+            {dubStatus && <div style={{ marginTop: '20px', color: 'var(--text)' }}>{dubStatus}</div>}
+            {dubAudioSrc && (
+              <div className="player-section" style={{ marginTop: '20px' }}>
+                <Waveform audioUrl={dubAudioSrc} />
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </main>
-
-      <footer className="app-footer">
-        Made with <span className="heart">❤</span> by Shourya & Ansh
-      </footer>
+      <footer className="app-footer">Made with <span className="heart">❤</span> by Shourya & Ansh</footer>
     </div>
   );
 }

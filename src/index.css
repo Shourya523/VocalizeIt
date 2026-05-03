@@ -360,3 +360,72 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  background: var(--accent-gradient);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+/* File Upload Container */
+.file-upload-container {
+  border: 2px dashed var(--border-color);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+.file-upload-container:hover {
+  border-color: var(--accent-color);
+}
+
+.file-upload-container input[type="file"] {
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+}
+
+.file-upload-container input[type="file"]::file-selector-button {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-upload-container input[type="file"]::file-selector-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-color);
+}
