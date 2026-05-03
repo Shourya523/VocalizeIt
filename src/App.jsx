@@ -342,7 +342,7 @@ function App() {
           </div>
         )}
       </main>
-      <footer className="app-footer">Made with <span className="heart">❤</span> by Shourya & Ansh</footer>
+      {/* <footer className="app-footer">Made with <span className="heart">❤</span> by Shourya & Ansh</footer> */}
     </div>
   );
 }
